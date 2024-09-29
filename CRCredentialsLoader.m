@@ -71,7 +71,7 @@ static NSString* cr_cached_working_directory_path = nil;
     + (bool) downloadAPK {
         NSLog(@"[Crunchyrold] Downloading APK");
         
-        NSURL* url = [NSURL URLWithString: @"https://d.apkpure.com/b/APK/com.crunchyroll.crunchyroid?versionCode=746"];
+        NSURL* url = [NSURL URLWithString: @"https://d.apkpure.com/b/APK/com.crunchyroll.crunchyroid?versionCode=790"];
         NSData* urlData = [NSData dataWithContentsOfURL: url];
         if (urlData) {
             NSString* apkFilePath = [NSString stringWithFormat: @"%@/crunchyroll-apk.zip", [self getWorkingDirectoryPath]];
@@ -111,8 +111,8 @@ static NSString* cr_cached_working_directory_path = nil;
             return false;
         }
         
-        NSData* clientIdData = [dexFileData subdataWithRange: NSMakeRange(0x657ac2, 20)];
-        NSData* clientSecretData = [dexFileData subdataWithRange: NSMakeRange(0x6099c0, 32)];
+        NSData* clientIdData = [dexFileData subdataWithRange: NSMakeRange(0x5bf4b4, 20)];
+        NSData* clientSecretData = [dexFileData subdataWithRange: NSMakeRange(0x4eca17, 32)];
         
         NSString* clientId = [[NSString alloc] initWithData: clientIdData encoding: NSUTF8StringEncoding];
         NSString* clientSecret = [[NSString alloc] initWithData: clientSecretData encoding: NSUTF8StringEncoding];
