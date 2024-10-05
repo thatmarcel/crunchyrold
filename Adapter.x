@@ -32,9 +32,15 @@ NSString* videoToken = nil;
                 NSString* updatedBodyString = [NSString
                     stringWithFormat: @"%@&device_id=%@&device_name=%@&device_type=%@",
                     originalBodyString,
-                    [[[UIDevice currentDevice] identifierForVendor] UUIDString],
-                    [[UIDevice currentDevice] name],
-                    [[UIDevice currentDevice] systemName]
+                    [[[[UIDevice currentDevice] identifierForVendor] UUIDString]
+                        stringByAddingPercentEncodingWithAllowedCharacters: [NSCharacterSet URLQueryAllowedCharacterSet]
+                    ],
+                    [[[UIDevice currentDevice] name]
+                        stringByAddingPercentEncodingWithAllowedCharacters: [NSCharacterSet URLQueryAllowedCharacterSet]
+                    ],
+                    [[[UIDevice currentDevice] systemName]
+                        stringByAddingPercentEncodingWithAllowedCharacters: [NSCharacterSet URLQueryAllowedCharacterSet]
+                    ]
                 ];
                 NSData* updatedBodyData = [updatedBodyString dataUsingEncoding: NSUTF8StringEncoding];
                 
