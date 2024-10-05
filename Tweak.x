@@ -12,8 +12,6 @@
     - (void) registerSubscription:(id)subscription { }
 %end
 
-bool cr_did_setup_hooks = false;
-
 void cr_show_manual_credentials_input_alert(UIViewController* presentingViewController) {
     UIAlertController* alertController = [UIAlertController
         alertControllerWithTitle: @"Manual input"
@@ -123,9 +121,7 @@ void cr_show_info_alert(UIViewController* presentingViewController) {
     - (void) viewDidAppear:(BOOL)animated {
         %orig;
         
-        if (!cr_did_setup_hooks) {
-            cr_show_info_alert(self);
-        }
+        cr_show_info_alert(self);
     }
 
 %end
@@ -133,10 +129,7 @@ void cr_show_info_alert(UIViewController* presentingViewController) {
 %ctor {
     NSLog(@"[Crunchyrold] Loaded");
     
-    if (cr_load_credentials_and_setup_hooks()) {
-        cr_did_setup_hooks = true;
-        return;
-    }
+    cr_load_credentials_and_setup_hooks();
     
     %init(CrunchyrollForceUpgradeViewController=objc_getClass("Crunchyroll.ForceUpgradeViewController"));
 }
