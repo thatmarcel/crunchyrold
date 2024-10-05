@@ -11,9 +11,15 @@ static NSString* cr_cached_working_directory_path = nil;
             [self deleteWorkingDirectory];
             [self createWorkingDirectory];
             dispatch_async(dispatch_get_main_queue(), ^{
+                updateBlock(@"Fetching offsets...", false);
+            });
+            NSString* versionCode = [self fetchVersionCode];
+            unsigned int clientIdOffset = [self fetchClientIdOffset];
+            unsigned int clientSecretOffset = [self fetchClientSecretOffset];
+            dispatch_async(dispatch_get_main_queue(), ^{
                 updateBlock(@"Downloading APK...", false);
             });
-            if (![self downloadAPK]) {
+            if (![self downloadAPKWithVersionCode: versionCode]) {
                 dispatch_async(dispatch_get_main_queue(), ^{
                     updateBlock(@"APK download failed.\n\nRestart the app to try again.", true);
                 });
@@ -26,7 +32,10 @@ static NSString* cr_cached_working_directory_path = nil;
             dispatch_async(dispatch_get_main_queue(), ^{
                 updateBlock(@"Extracting credentials...", false);
             });
-            if (![self extractCredentials]) {
+            if (![self
+                extractCredentialsWithClientIdOffset: clientIdOffset
+                clientSecretOffset: clientSecretOffset
+            ]) {
                 dispatch_async(dispatch_get_main_queue(), ^{
                     updateBlock(@"Extracting credentials failed.\n\nRestart the app to try again.", true);
                 });
@@ -68,10 +77,52 @@ static NSString* cr_cached_working_directory_path = nil;
         ];
     }
     
-    + (bool) downloadAPK {
+    + (NSString*) fetchVersionCode {
+        return [@([[NSString
+            stringWithContentsOfURL: [NSURL
+                URLWithString: @"https://raw.githubusercontent.com/thatmarcel/crunchy-credentials-offsets/refs/heads/main/version-code.txt"
+            ]
+            encoding: NSUTF8StringEncoding
+            error: nil
+        ] intValue]) stringValue];
+    }
+    
+    + (unsigned int) fetchClientIdOffset {
+        return [self
+            fetchOffsetFromURLString: @"https://raw.githubusercontent.com/thatmarcel/crunchy-credentials-offsets/refs/heads/main/client-id-offset.txt"
+        ];
+    }
+    
+    + (unsigned int) fetchClientSecretOffset {
+        return [self
+            fetchOffsetFromURLString: @"https://raw.githubusercontent.com/thatmarcel/crunchy-credentials-offsets/refs/heads/main/client-secret-offset.txt"
+        ];
+    }
+    
+    + (unsigned int) fetchOffsetFromURLString:(NSString*)urlString {
+        NSString* offsetString = [NSString
+            stringWithContentsOfURL: [NSURL
+                URLWithString: urlString
+            ]
+            encoding: NSUTF8StringEncoding
+            error: nil
+        ];
+        
+        unsigned int result = 0;
+        
+        NSScanner* scanner = [NSScanner scannerWithString: offsetString];
+        [scanner scanHexInt: &result];
+        
+        return result;
+    }
+    
+    + (bool) downloadAPKWithVersionCode:(NSString*)versionCode {
         NSLog(@"[Crunchyrold] Downloading APK");
         
-        NSURL* url = [NSURL URLWithString: @"https://d.apkpure.com/b/APK/com.crunchyroll.crunchyroid?versionCode=790"];
+        NSURL* url = [NSURL URLWithString: [NSString
+            stringWithFormat: @"https://d.apkpure.com/b/APK/com.crunchyroll.crunchyroid?versionCode=%@",
+            versionCode
+        ]];
         NSData* urlData = [NSData dataWithContentsOfURL: url];
         if (urlData) {
             NSString* apkFilePath = [NSString stringWithFormat: @"%@/crunchyroll-apk.zip", [self getWorkingDirectoryPath]];
@@ -100,7 +151,7 @@ static NSString* cr_cached_working_directory_path = nil;
         NSLog(@"[Crunchyrold] Unzipped APK to path: %@", apkFileContentsDirectoryPath);
     }
     
-    + (bool) extractCredentials {
+    + (bool) extractCredentialsWithClientIdOffset:(unsigned int)clientIdOffset clientSecretOffset:(unsigned int)clientSecretOffset {
         NSLog(@"[Crunchyrold] Extracting credentials");
         
         NSString* dexFilePath = [NSString stringWithFormat: @"%@/crunchyroll-apk-contents/classes2.dex", [self getWorkingDirectoryPath]];
@@ -111,8 +162,8 @@ static NSString* cr_cached_working_directory_path = nil;
             return false;
         }
         
-        NSData* clientIdData = [dexFileData subdataWithRange: NSMakeRange(0x5bf4b4, 20)];
-        NSData* clientSecretData = [dexFileData subdataWithRange: NSMakeRange(0x4eca17, 32)];
+        NSData* clientIdData = [dexFileData subdataWithRange: NSMakeRange(clientIdOffset, 20)];
+        NSData* clientSecretData = [dexFileData subdataWithRange: NSMakeRange(clientSecretOffset, 32)];
         
         NSString* clientId = [[NSString alloc] initWithData: clientIdData encoding: NSUTF8StringEncoding];
         NSString* clientSecret = [[NSString alloc] initWithData: clientSecretData encoding: NSUTF8StringEncoding];
